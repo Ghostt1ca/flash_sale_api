@@ -27,7 +27,10 @@ class OrderSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        product = validated_data['product']
+        
+        with transaction.atomic():
+            product = Product.objects.select_for_update().get(id=validated_data['product'].id)
+        # product = validated_data['product']
         amount = validated_data['amount']
 
         product.stock -= amount
