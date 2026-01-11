@@ -14,6 +14,9 @@ class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     amount = models.IntegerField()
-
+    price_at_purchase = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
     def __str__(self):
         return self.name
