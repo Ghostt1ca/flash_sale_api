@@ -2,7 +2,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import generics, viewsets
 from .models import Product, Order
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Avg
 from .serializers import ProductSerializer, OrderSerializer
 # Create your views here.
 
@@ -19,8 +19,13 @@ class OrderDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = OrderSerializer
 
 class OrderList(generics.ListCreateAPIView):
-    queryset = Order.objects.all()
     serializer_class = OrderSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return Order.objects.all()
+        return Order.objects.filter(user=user)
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -28,10 +33,13 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def stats(self, request):
-        total_stoc = self.get_queryset().aggregate(
-            valoare_totala=Sum(F('price') * F('stock'))
+        total_produse = self.get_queryset().count()
+
+        statistics = self.get_queryset().aggregate(
+            valoare_totala=Sum(F('price') * F('stock')),
+            stoc_mediu = Avg('stock')
         )
         return Response({
-            "mesaj": "Raport inventar",
-            "date": total_stoc
+            "total_produse": total_produse,
+            "inventar": statistics
         })
